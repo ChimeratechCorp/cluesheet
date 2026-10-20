@@ -14,12 +14,20 @@ final class GameStore {
     }
     private(set) var sheet: Sheet?
 
+    /// Free-form notes for this game. Kept apart from `game` so typing
+    /// doesn't re-run the solver on every keystroke.
+    var notes: String = "" {
+        didSet { try? notes.write(to: notesURL, atomically: true, encoding: .utf8) }
+    }
+
     private let saveURL = URL.documentsDirectory.appending(path: "game.json")
+    private let notesURL = URL.documentsDirectory.appending(path: "notes.txt")
 
     init() {
         if let data = try? Data(contentsOf: saveURL) {
             game = try? JSONDecoder().decode(Game.self, from: data)
         }
+        notes = (try? String(contentsOf: notesURL, encoding: .utf8)) ?? ""
         recompute()
     }
 
@@ -33,6 +41,7 @@ final class GameStore {
 
     func newGame() {
         game = nil
+        notes = ""
     }
 
     private func recompute() {

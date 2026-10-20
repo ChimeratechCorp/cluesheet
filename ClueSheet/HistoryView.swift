@@ -7,24 +7,43 @@ struct HistoryView: View {
     @Environment(GameStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
+    /// True when shown beside the sheet on a wide screen rather than as a pop-up.
+    var embedded = false
+
     var body: some View {
+        if embedded {
+            list
+        } else {
+            standalone
+        }
+    }
+
+    private var list: some View {
         List {
-            if let game = store.game {
-                ForEach(game.events.reversed()) { event in
-                    Text(describe(event, game: game))
-                        .swipeActions {
-                            Button("Delete", role: .destructive) { store.remove(event) }
-                        }
+            Section {
+                if let game = store.game {
+                    ForEach(game.events.reversed()) { event in
+                        Text(describe(event, game: game))
+                            .swipeActions {
+                                Button("Delete", role: .destructive) { store.remove(event) }
+                            }
+                    }
+                }
+            } header: {
+                if embedded { Text("History") }
+            }
+        }
+    }
+
+    private var standalone: some View {
+        list
+            .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
-        }
-        .navigationTitle("History")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
-            }
-        }
     }
 
     private func describe(_ event: Event, game: Game) -> String {

@@ -19,7 +19,12 @@ what, and tells you when it knows what's in the envelope.
   candidates are left.
 - **History:** every entry, newest first. Swipe to delete a mistake and the sheet is
   recalculated. If entries contradict each other, a red warning tells you what conflicts.
-- The game is saved automatically, so closing the app doesn't lose it.
+- **Notes:** a blank notepad for hunches and reminders.
+- **Foldable and wide screens:** on an unfolded foldable iPhone (or in landscape, or on an
+  iPad) the screen splits in two: notes on the left half, the clue sheet on the right.
+  A switch at the top of the left half flips it to the history. On a folded phone, notes
+  and history are in the ⋯ menu.
+- The game and notes are saved automatically, so closing the app doesn't lose them.
 
 ### How it deduces
 

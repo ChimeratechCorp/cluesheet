@@ -7,10 +7,13 @@ struct SheetView: View {
 
     @State private var showingSuggestion = false
     @State private var showingHistory = false
+    @State private var showingNotes = false
     @State private var confirmingNewGame = false
     @State private var editing: Cell?
 
-    private let cellWidth: CGFloat = 34
+    /// Screens at least this wide (an unfolded foldable, landscape, iPad)
+    /// split in two: notes on the left half, the sheet on the right.
+    private static let wideLayoutWidth: CGFloat = 700
 
     struct Cell: Identifiable {
         let card: String
@@ -20,33 +23,25 @@ struct SheetView: View {
 
     var body: some View {
         if let game = store.game, let sheet = store.sheet {
-            List {
-                Section {
-                    SolutionBanner(sheet: sheet)
-                }
-                if let problem = sheet.contradiction {
-                    Section {
-                        Label("Something doesn't add up: \(problem) Check the history for a mistyped entry.",
-                              systemImage: "exclamationmark.octagon")
-                            .foregroundStyle(.red)
+            GeometryReader { geo in
+                let wide = geo.size.width >= Self.wideLayoutWidth
+                let sheetWidth = wide ? geo.size.width / 2 : geo.size.width
+                HStack(spacing: 0) {
+                    if wide {
+                        SidePanel()
+                            .frame(width: geo.size.width / 2 - 1)
+                        Divider()
                     }
-                }
-                ForEach(Category.allCases, id: \.self) { category in
-                    Section {
-                        ForEach(game.edition.cards(in: category)) { card in
-                            row(card: card, game: game, sheet: sheet)
-                        }
-                    } header: {
-                        header(title: category.title, game: game)
-                    }
+                    sheetList(game: game, sheet: sheet,
+                              cellWidth: Self.cellWidth(for: sheetWidth, owners: sheet.ownerCount))
                 }
             }
-            .listStyle(.plain)
             .navigationTitle("Clue Sheet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        Button("Notes", systemImage: "note.text") { showingNotes = true }
                         Button("History", systemImage: "clock") { showingHistory = true }
                         Button("New game", systemImage: "arrow.counterclockwise", role: .destructive) {
                             confirmingNewGame = true
@@ -64,6 +59,9 @@ struct SheetView: View {
             }
             .sheet(isPresented: $showingHistory) {
                 NavigationStack { HistoryView() }
+            }
+            .sheet(isPresented: $showingNotes) {
+                NavigationStack { NotesView() }
             }
             .confirmationDialog("Start a new game? This game will be cleared.",
                                 isPresented: $confirmingNewGame, titleVisibility: .visible) {
@@ -84,7 +82,39 @@ struct SheetView: View {
         }
     }
 
-    private func header(title: String, game: Game) -> some View {
+    private func sheetList(game: Game, sheet: Sheet, cellWidth: CGFloat) -> some View {
+        List {
+            Section {
+                SolutionBanner(sheet: sheet)
+            }
+            if let problem = sheet.contradiction {
+                Section {
+                    Label("Something doesn't add up: \(problem) Check the history for a mistyped entry.",
+                          systemImage: "exclamationmark.octagon")
+                        .foregroundStyle(.red)
+                }
+            }
+            ForEach(Category.allCases, id: \.self) { category in
+                Section {
+                    ForEach(game.edition.cards(in: category)) { card in
+                        row(card: card, game: game, sheet: sheet, cellWidth: cellWidth)
+                    }
+                } header: {
+                    header(title: category.title, game: game, cellWidth: cellWidth)
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    /// Squares grow with the screen, within reason, so an unfolded screen
+    /// gets bigger tap targets rather than just a wider name column.
+    private static func cellWidth(for width: CGFloat, owners: Int) -> CGFloat {
+        let nameColumn: CGFloat = width >= 500 ? 180 : 120
+        return min(60, max(30, (width - nameColumn - 32) / CGFloat(owners)))
+    }
+
+    private func header(title: String, game: Game, cellWidth: CGFloat) -> some View {
         HStack(spacing: 0) {
             Text(title)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +129,7 @@ struct SheetView: View {
         .font(.caption)
     }
 
-    private func row(card: Card, game: Game, sheet: Sheet) -> some View {
+    private func row(card: Card, game: Game, sheet: Sheet, cellWidth: CGFloat) -> some View {
         let solved = sheet.mark(card: card.name, owner: sheet.envelope) == .has
         let ruledOut = sheet.mark(card: card.name, owner: sheet.envelope) == .lacks
         return HStack(spacing: 0) {
