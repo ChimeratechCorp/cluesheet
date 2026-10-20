@@ -1,0 +1,17 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    name: Simulator screenshots
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Capture screenshots
+        run: scripts/screenshots.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/*.png

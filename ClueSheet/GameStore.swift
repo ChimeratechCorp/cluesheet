@@ -24,6 +24,12 @@ final class GameStore {
     private let notesURL = URL.documentsDirectory.appending(path: "notes.txt")
 
     init() {
+        if ProcessInfo.processInfo.arguments.contains(DemoGame.launchArgument) {
+            game = DemoGame.game
+            notes = DemoGame.notes
+            recompute()
+            return
+        }
         if let data = try? Data(contentsOf: saveURL) {
             game = try? JSONDecoder().decode(Game.self, from: data)
         }
