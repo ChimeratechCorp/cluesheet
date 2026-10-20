@@ -59,10 +59,14 @@ public enum Event: Hashable, Codable, Identifiable {
     /// A player accused these three cards and was wrong, so the envelope
     /// does not hold all three of them.
     case wrongAccusation(id: UUID = UUID(), player: Int, cards: [String])
+    /// A turn number crossed out of a square: on that turn, the player who
+    /// showed a card didn't show this one.
+    case crossedOut(id: UUID = UUID(), suggestion: UUID, card: String)
 
     public var id: UUID {
         switch self {
-        case .hasCard(let id, _, _), .lacksCard(let id, _, _), .wrongAccusation(let id, _, _):
+        case .hasCard(let id, _, _), .lacksCard(let id, _, _), .wrongAccusation(let id, _, _),
+             .crossedOut(let id, _, _):
             return id
         case .suggestion(let s):
             return s.id
@@ -132,18 +136,50 @@ extension Game {
         return numbers
     }
 
+    /// Cards crossed out of each suggestion's pencil marks.
+    public func crossedOutCards() -> [UUID: Set<String>] {
+        var result: [UUID: Set<String>] = [:]
+        for event in events {
+            if case .crossedOut(_, let suggestion, let card) = event { result[suggestion, default: []].insert(card) }
+        }
+        return result
+    }
+
+    /// The crossed-out entry for a suggestion and card, if there is one.
+    public func crossOut(suggestion: UUID, card: String) -> Event? {
+        events.first {
+            if case .crossedOut(_, suggestion, card) = $0 { return true }
+            return false
+        }
+    }
+
     /// Pencil marks, like the small numbers written on a paper sheet: for
     /// each square, the turns in which that player showed a card that might
     /// have been this one (or, when you saw it, was this one).
-    public func pencilMarks() -> [CellKey: [Int]] {
+    public func pencilMarks() -> [CellKey: [PencilMark]] {
         let turns = turnNumbers()
-        var marks: [CellKey: [Int]] = [:]
+        let crossed = crossedOutCards()
+        var marks: [CellKey: [PencilMark]] = [:]
         for event in events {
             guard case .suggestion(let s) = event, let shower = s.shower, let turn = turns[s.id] else { continue }
             for card in s.shownCard.map({ [$0] }) ?? s.cards {
-                marks[CellKey(card: card, owner: shower), default: []].append(turn)
+                let mark = PencilMark(turn: turn, suggestion: s.id, card: card,
+                                      isCrossedOut: crossed[s.id]?.contains(card) ?? false,
+                                      isSeen: s.shownCard != nil)
+                marks[CellKey(card: card, owner: shower), default: []].append(mark)
             }
         }
         return marks
     }
+}
+
+/// A turn number written in a square.
+public struct PencilMark: Hashable {
+    public let turn: Int
+    public let suggestion: UUID
+    public let card: String
+    /// Crossed out by the player: this wasn't the card shown that turn.
+    public let isCrossedOut: Bool
+    /// You saw this card, so there's nothing to cross out.
+    public let isSeen: Bool
 }

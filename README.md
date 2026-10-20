@@ -24,6 +24,9 @@ what, and tells you when it knows what's in the envelope.
   hand is known. When off, it shows only what you entered, like a paper sheet.
 - **Turn numbers:** each square shows, in small numbers, the turns when that player showed
   a card that might have been this one. The history is numbered to match.
+  Tap a square to cross out a turn number once you know it wasn't that card. When only
+  one number from a turn is left, that's the card the player showed: check it off
+  yourself, or let the Helper do it.
 - **Notes:** a blank notepad for hunches and reminders.
 - **iPhone Duo (foldable):** unfolded, the screen splits at the fold: notes on the left
   half, the clue sheet on the right. (Any screen at least 600 points wide does the same,

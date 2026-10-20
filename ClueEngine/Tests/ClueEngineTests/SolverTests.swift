@@ -98,12 +98,28 @@ final class SolverTests: XCTestCase {
         game.events.append(.hasCard(player: 1, card: "Lounge"))
         game.events.append(.suggestion(Suggestion(suggester: 0, cards: ["Prof. Plum", "Lead Pipe", "Lounge"], shower: 2, shownCard: "Lead Pipe")))
         game.events.append(.suggestion(Suggestion(suggester: 2, cards: ["Prof. Plum", "Wrench", "Library"], shower: 0)))
-        let marks = game.pencilMarks()
+        let marks = game.pencilMarks().mapValues { $0.map(\.turn) }
         XCTAssertEqual(marks[CellKey(card: "Prof. Plum", owner: 2)], [1])
         XCTAssertEqual(marks[CellKey(card: "Wrench", owner: 2)], [1])
         XCTAssertEqual(marks[CellKey(card: "Lead Pipe", owner: 2)], [2])
         XCTAssertNil(marks[CellKey(card: "Lounge", owner: 2)], "only the card I saw is marked")
         XCTAssertEqual(marks[CellKey(card: "Wrench", owner: 0)], [3])
+    }
+
+    func testCrossingOutTwoNumbersChecksTheThird() {
+        var game = makeGame(myCards: myHand)
+        let turn = Suggestion(suggester: 1, cards: ["Prof. Plum", "Wrench", "Study"], shower: 2)
+        game.events.append(.suggestion(turn))
+        game.events.append(.crossedOut(suggestion: turn.id, card: "Prof. Plum"))
+        XCTAssertEqual(Solver.solve(game).mark(card: "Study", owner: 2), .unknown)
+        game.events.append(.crossedOut(suggestion: turn.id, card: "Wrench"))
+        let sheet = Solver.solve(game)
+        XCTAssertEqual(sheet.mark(card: "Study", owner: 2), .has)
+        // Crossing out a number says nothing about the rest of Bo's hand.
+        XCTAssertEqual(sheet.mark(card: "Wrench", owner: 2), .unknown)
+        let plum = game.pencilMarks()[CellKey(card: "Prof. Plum", owner: 2)]?.first
+        XCTAssertEqual(plum?.isCrossedOut, true)
+        XCTAssertNotNil(game.crossOut(suggestion: turn.id, card: "Wrench"))
     }
 
     func testContradictionIsReported() {

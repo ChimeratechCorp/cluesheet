@@ -132,6 +132,7 @@ private struct Engine {
     }
 
     mutating func applyEvents() throws {
+        let crossed = game.crossedOutCards()
         for event in game.events {
             switch event {
             case .hasCard(_, let player, let card):
@@ -152,7 +153,9 @@ private struct Engine {
                         let c = try index(of: shown)
                         try set(c, shower, .has, "\(ownerName(shower)) showed \(shown) but is marked as lacking it.")
                     } else {
-                        atLeastOne.append(AtLeastOne(owner: shower, cards: cs,
+                        let remaining = try s.cards.filter { !(crossed[s.id]?.contains($0) ?? false) }
+                            .map { try index(of: $0) }
+                        atLeastOne.append(AtLeastOne(owner: shower, cards: remaining,
                             reason: "\(ownerName(shower)) showed a card for \(s.cards.joined(separator: ", ")) but can't hold any of them."))
                     }
                 }
@@ -160,6 +163,8 @@ private struct Engine {
                 let cs = try cards.map { try index(of: $0) }
                 notAll.append(NotAll(cards: cs,
                     reason: "A wrong accusation of \(cards.joined(separator: ", ")) conflicts with the solution."))
+            case .crossedOut:
+                break // Applied to the suggestion's clause above.
             }
         }
     }

@@ -65,6 +65,9 @@ struct HistoryView: View {
             return "\(turn)\(name(s.suggester)) suggested \(cards). \(name(shower)) showed a card\(shown)."
         case .wrongAccusation(_, let p, let cards):
             return "\(name(p)) wrongly accused \(cards.joined(separator: ", "))."
+        case .crossedOut(_, let suggestion, let card):
+            let turn = game.turnNumbers()[suggestion].map { "turn \($0)" } ?? "a deleted turn"
+            return "Crossed out \(card) for \(turn)."
         }
     }
 }

@@ -86,6 +86,15 @@ struct SheetView: View {
                 if let entry = manualEntry(for: cell, game: game) {
                     Button("Clear my entry", role: .destructive) { store.remove(entry) }
                 }
+                ForEach(game.pencilMarks()[CellKey(card: cell.card, owner: cell.owner)] ?? [], id: \.self) { mark in
+                    if mark.isCrossedOut, let entry = game.crossOut(suggestion: mark.suggestion, card: mark.card) {
+                        Button("Put back turn \(mark.turn)") { store.remove(entry) }
+                    } else if !mark.isSeen {
+                        Button("Cross out turn \(mark.turn)") {
+                            store.add(.crossedOut(suggestion: mark.suggestion, card: mark.card))
+                        }
+                    }
+                }
             }
         }
     }
@@ -140,7 +149,7 @@ struct SheetView: View {
         .font(.caption)
     }
 
-    private func row(card: Card, game: Game, sheet: Sheet, pencilMarks: [CellKey: [Int]],
+    private func row(card: Card, game: Game, sheet: Sheet, pencilMarks: [CellKey: [PencilMark]],
                      cellWidth: CGFloat) -> some View {
         let solved = sheet.mark(card: card.name, owner: sheet.envelope) == .has
         let ruledOut = sheet.mark(card: card.name, owner: sheet.envelope) == .lacks
@@ -154,7 +163,8 @@ struct SheetView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             ForEach(0..<sheet.ownerCount, id: \.self) { owner in
                 SquareView(mark: sheet.mark(card: card.name, owner: owner),
-                           turns: pencilMarks[CellKey(card: card.name, owner: owner)] ?? [])
+                           turns: (pencilMarks[CellKey(card: card.name, owner: owner)] ?? [])
+                               .filter { !$0.isCrossedOut }.map(\.turn))
                     .frame(width: cellWidth, height: Self.rowHeight)
                     .contentShape(Rectangle())
                     .onTapGesture { editing = Cell(card: card.name, owner: owner) }
