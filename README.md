@@ -20,8 +20,9 @@ what, and tells you when it knows what's in the envelope.
 - **History:** every entry, newest first. Swipe to delete a mistake and the sheet is
   recalculated. If entries contradict each other, a red warning tells you what conflicts.
 - **Notes:** a blank notepad for hunches and reminders.
-- **Foldable and wide screens:** on an unfolded foldable iPhone (or in landscape, or on an
-  iPad) the screen splits in two: notes on the left half, the clue sheet on the right.
+- **iPhone Duo (foldable):** unfolded, the screen splits at the fold: notes on the left
+  half, the clue sheet on the right. (Any screen at least 600 points wide does the same,
+  such as an iPad or the folded Duo turned sideways.)
   A switch at the top of the left half flips it to the history. On a folded phone, notes
   and history are in the ⋯ menu.
 - The game and notes are saved automatically, so closing the app doesn't lose them.

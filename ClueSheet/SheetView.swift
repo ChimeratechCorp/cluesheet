@@ -11,9 +11,11 @@ struct SheetView: View {
     @State private var confirmingNewGame = false
     @State private var editing: Cell?
 
-    /// Screens at least this wide (an unfolded foldable, landscape, iPad)
-    /// split in two: notes on the left half, the sheet on the right.
-    private static let wideLayoutWidth: CGFloat = 700
+    /// Screens at least this wide split in two at the middle: notes on the
+    /// left half, the sheet on the right. The iPhone Duo's inner screen is
+    /// 1878 px (626 pt) wide unfolded; its outer screen is 466 pt, so folded
+    /// it shows the sheet alone.
+    private static let wideLayoutWidth: CGFloat = 600
 
     struct Cell: Identifiable {
         let card: String
@@ -110,8 +112,10 @@ struct SheetView: View {
     /// Squares grow with the screen, within reason, so an unfolded screen
     /// gets bigger tap targets rather than just a wider name column.
     private static func cellWidth(for width: CGFloat, owners: Int) -> CGFloat {
-        let nameColumn: CGFloat = width >= 500 ? 180 : 120
-        return min(60, max(30, (width - nameColumn - 32) / CGFloat(owners)))
+        // Half of an unfolded iPhone Duo is about 313 pt, so the name column
+        // shrinks before the squares do.
+        let nameColumn: CGFloat = width >= 500 ? 180 : width < 360 ? 92 : 120
+        return min(60, max(26, (width - nameColumn - 32) / CGFloat(owners)))
     }
 
     private func header(title: String, game: Game, cellWidth: CGFloat) -> some View {
@@ -138,7 +142,7 @@ struct SheetView: View {
                 .foregroundStyle(ruledOut ? Color.secondary : Color.primary)
                 .fontWeight(solved ? .bold : .regular)
                 .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
             ForEach(0..<sheet.ownerCount, id: \.self) { owner in
                 MarkView(mark: sheet.mark(card: card.name, owner: owner))
