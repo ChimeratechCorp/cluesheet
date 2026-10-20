@@ -112,11 +112,11 @@ private struct Engine {
 
     /// Returns true when the cell changed.
     @discardableResult
-    mutating func set(_ card: Int, _ owner: Int, _ mark: Mark, _ reason: @autoclosure () -> String) throws -> Bool {
+    mutating func set(_ card: Int, _ owner: Int, _ mark: Mark, _ reason: String) throws -> Bool {
         let current = get(card, owner)
         if current == mark { return false }
         if current != .unknown {
-            throw Solver.Contradiction(reason: reason())
+            throw Solver.Contradiction(reason: reason)
         }
         sheet.marks[card * owners + owner] = mark
         return true
