@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  engine-tests:
+    name: Deduction engine tests
+    runs-on: ubuntu-latest
+    container: swift:5.10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        working-directory: ClueEngine
+        run: swift test
+
+  app-build:
+    name: Build iPhone app
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for the iOS Simulator
+        run: |
+          xcodebuild build \
+            -project ClueSheet.xcodeproj \
+            -scheme ClueSheet \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
