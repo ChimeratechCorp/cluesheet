@@ -17,6 +17,9 @@ struct SheetView: View {
     /// it shows the sheet alone.
     private static let wideLayoutWidth: CGFloat = 600
 
+    /// Tall enough for a mark plus a line of pencil-mark turn numbers.
+    private static let rowHeight: CGFloat = 44
+
     struct Cell: Identifiable {
         let card: String
         let owner: Int
@@ -85,7 +88,8 @@ struct SheetView: View {
     }
 
     private func sheetList(game: Game, sheet: Sheet, cellWidth: CGFloat) -> some View {
-        List {
+        let pencilMarks = game.pencilMarks()
+        return List {
             Section {
                 SolutionBanner(sheet: sheet)
             }
@@ -99,7 +103,7 @@ struct SheetView: View {
             ForEach(Category.allCases, id: \.self) { category in
                 Section {
                     ForEach(game.edition.cards(in: category)) { card in
-                        row(card: card, game: game, sheet: sheet, cellWidth: cellWidth)
+                        row(card: card, game: game, sheet: sheet, pencilMarks: pencilMarks, cellWidth: cellWidth)
                     }
                 } header: {
                     header(title: category.title, game: game, cellWidth: cellWidth)
@@ -115,7 +119,7 @@ struct SheetView: View {
         // Half of an unfolded iPhone Duo is about 313 pt, so the name column
         // shrinks before the squares do.
         let nameColumn: CGFloat = width >= 500 ? 180 : width < 360 ? 92 : 120
-        return min(60, max(26, (width - nameColumn - 32) / CGFloat(owners)))
+        return min(64, max(30, (width - nameColumn - 32) / CGFloat(owners)))
     }
 
     private func header(title: String, game: Game, cellWidth: CGFloat) -> some View {
@@ -133,7 +137,8 @@ struct SheetView: View {
         .font(.caption)
     }
 
-    private func row(card: Card, game: Game, sheet: Sheet, cellWidth: CGFloat) -> some View {
+    private func row(card: Card, game: Game, sheet: Sheet, pencilMarks: [CellKey: [Int]],
+                     cellWidth: CGFloat) -> some View {
         let solved = sheet.mark(card: card.name, owner: sheet.envelope) == .has
         let ruledOut = sheet.mark(card: card.name, owner: sheet.envelope) == .lacks
         return HStack(spacing: 0) {
@@ -145,8 +150,9 @@ struct SheetView: View {
                 .minimumScaleFactor(0.6)
                 .frame(maxWidth: .infinity, alignment: .leading)
             ForEach(0..<sheet.ownerCount, id: \.self) { owner in
-                MarkView(mark: sheet.mark(card: card.name, owner: owner))
-                    .frame(width: cellWidth, height: 28)
+                SquareView(mark: sheet.mark(card: card.name, owner: owner),
+                           turns: pencilMarks[CellKey(card: card.name, owner: owner)] ?? [])
+                    .frame(width: cellWidth, height: Self.rowHeight)
                     .contentShape(Rectangle())
                     .onTapGesture { editing = Cell(card: card.name, owner: owner) }
             }
@@ -179,6 +185,33 @@ struct SheetView: View {
         let words = name.split(separator: " ")
         if words.count > 1 { return words.prefix(2).compactMap(\.first).map(String.init).joined() }
         return String(name.prefix(2))
+    }
+}
+
+/// One square: the deduced mark in the middle, and in the top corner the
+/// turns when this player showed a card that might have been this one.
+struct SquareView: View {
+    let mark: Mark
+    let turns: [Int]
+
+    private var showsTurns: Bool { !turns.isEmpty && mark != .lacks }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            MarkView(mark: mark)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, showsTurns ? 12 : 0)
+            if showsTurns {
+                Text(turns.map(String.init).joined(separator: " "))
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(mark == .has ? Color.secondary : Color.accentColor)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 2)
+                    .padding(.top, 1)
+            }
+        }
+        .overlay(Rectangle().stroke(Color.secondary.opacity(0.25), lineWidth: 0.5))
     }
 }
 

@@ -110,3 +110,40 @@ public struct Game: Hashable, Codable {
         return problems
     }
 }
+
+/// One square on the sheet.
+public struct CellKey: Hashable {
+    public let card: String
+    public let owner: Int
+
+    public init(card: String, owner: Int) {
+        self.card = card
+        self.owner = owner
+    }
+}
+
+extension Game {
+    /// Turn numbers for the suggestions in the log, counting from 1.
+    public func turnNumbers() -> [UUID: Int] {
+        var numbers: [UUID: Int] = [:]
+        for event in events {
+            if case .suggestion(let s) = event { numbers[s.id] = numbers.count + 1 }
+        }
+        return numbers
+    }
+
+    /// Pencil marks, like the small numbers written on a paper sheet: for
+    /// each square, the turns in which that player showed a card that might
+    /// have been this one (or, when you saw it, was this one).
+    public func pencilMarks() -> [CellKey: [Int]] {
+        let turns = turnNumbers()
+        var marks: [CellKey: [Int]] = [:]
+        for event in events {
+            guard case .suggestion(let s) = event, let shower = s.shower, let turn = turns[s.id] else { continue }
+            for card in s.shownCard.map({ [$0] }) ?? s.cards {
+                marks[CellKey(card: card, owner: shower), default: []].append(turn)
+            }
+        }
+        return marks
+    }
+}

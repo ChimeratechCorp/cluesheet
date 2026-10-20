@@ -57,11 +57,12 @@ struct HistoryView: View {
             return "\(name(p)) doesn't have \(card)"
         case .suggestion(let s):
             let cards = s.cards.joined(separator: ", ")
+            let turn = game.turnNumbers()[s.id].map { "Turn \($0): " } ?? ""
             guard let shower = s.shower else {
-                return "\(name(s.suggester)) suggested \(cards). Nobody showed a card."
+                return "\(turn)\(name(s.suggester)) suggested \(cards). Nobody showed a card."
             }
             let shown = s.shownCard.map { " (\($0))" } ?? ""
-            return "\(name(s.suggester)) suggested \(cards). \(name(shower)) showed a card\(shown)."
+            return "\(turn)\(name(s.suggester)) suggested \(cards). \(name(shower)) showed a card\(shown)."
         case .wrongAccusation(_, let p, let cards):
             return "\(name(p)) wrongly accused \(cards.joined(separator: ", "))."
         }

@@ -82,6 +82,20 @@ final class SolverTests: XCTestCase {
         XCTAssertEqual(sheet.mark(card: "Study", owner: sheet.envelope), .lacks)
     }
 
+    func testPencilMarksNumberTheTurns() {
+        var game = makeGame(myCards: myHand)
+        game.events.append(.suggestion(Suggestion(suggester: 1, cards: ["Prof. Plum", "Wrench", "Study"], shower: 2)))
+        game.events.append(.hasCard(player: 1, card: "Lounge"))
+        game.events.append(.suggestion(Suggestion(suggester: 0, cards: ["Prof. Plum", "Lead Pipe", "Lounge"], shower: 2, shownCard: "Lead Pipe")))
+        game.events.append(.suggestion(Suggestion(suggester: 2, cards: ["Prof. Plum", "Wrench", "Library"], shower: 0)))
+        let marks = game.pencilMarks()
+        XCTAssertEqual(marks[CellKey(card: "Prof. Plum", owner: 2)], [1])
+        XCTAssertEqual(marks[CellKey(card: "Wrench", owner: 2)], [1])
+        XCTAssertEqual(marks[CellKey(card: "Lead Pipe", owner: 2)], [2])
+        XCTAssertNil(marks[CellKey(card: "Lounge", owner: 2)], "only the card I saw is marked")
+        XCTAssertEqual(marks[CellKey(card: "Wrench", owner: 0)], [3])
+    }
+
     func testContradictionIsReported() {
         var game = makeGame(myCards: myHand)
         game.events.append(.hasCard(player: 1, card: "Wrench"))
