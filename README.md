@@ -19,6 +19,11 @@ what, and tells you when it knows what's in the envelope.
   candidates are left.
 - **History:** every entry, newest first. Swipe to delete a mistake and the sheet is
   recalculated. If entries contradict each other, a red warning tells you what conflicts.
+- **Helper switch** (⋯ menu, on by default): when on, the sheet fills in everything that
+  follows from your entries, such as X'ing out the rest of a column once a player's whole
+  hand is known. When off, it shows only what you entered, like a paper sheet.
+- **Turn numbers:** each square shows, in small numbers, the turns when that player showed
+  a card that might have been this one. The history is numbered to match.
 - **Notes:** a blank notepad for hunches and reminders.
 - **iPhone Duo (foldable):** unfolded, the screen splits at the fold: notes on the left
   half, the clue sheet on the right. (Any screen at least 600 points wide does the same,

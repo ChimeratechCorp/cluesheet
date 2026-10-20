@@ -20,6 +20,16 @@ final class GameStore {
         didSet { try? notes.write(to: notesURL, atomically: true, encoding: .utf8) }
     }
 
+    /// When on, the sheet fills in everything that follows from your
+    /// entries. When off, it shows only what you entered, like paper.
+    var helperOn: Bool = UserDefaults.standard.object(forKey: "helperOn") == nil
+        || UserDefaults.standard.bool(forKey: "helperOn") {
+        didSet {
+            UserDefaults.standard.set(helperOn, forKey: "helperOn")
+            recompute()
+        }
+    }
+
     private let saveURL = URL.documentsDirectory.appending(path: "game.json")
     private let notesURL = URL.documentsDirectory.appending(path: "notes.txt")
 
@@ -51,7 +61,7 @@ final class GameStore {
     }
 
     private func recompute() {
-        sheet = game.map { Solver.solve($0) }
+        sheet = game.map { Solver.solve($0, deduce: helperOn) }
     }
 
     private func save() {

@@ -82,6 +82,16 @@ final class SolverTests: XCTestCase {
         XCTAssertEqual(sheet.mark(card: "Study", owner: sheet.envelope), .lacks)
     }
 
+    func testWithoutDeductionOnlyEntriesAreMarked() {
+        var game = makeGame(myCards: myHand)
+        game.events.append(.suggestion(Suggestion(suggester: 1, cards: ["Prof. Plum", "Wrench", "Study"], shower: 0)))
+        let sheet = Solver.solve(game, deduce: false)
+        XCTAssertEqual(sheet.mark(card: "Knife", owner: 0), .has)
+        XCTAssertEqual(sheet.mark(card: "Knife", owner: 1), .unknown, "no one-owner-per-card rule")
+        XCTAssertEqual(sheet.mark(card: "Wrench", owner: 0), .unknown, "no full-hand rule")
+        XCTAssertEqual(Solver.solve(game).mark(card: "Wrench", owner: 0), .lacks)
+    }
+
     func testPencilMarksNumberTheTurns() {
         var game = makeGame(myCards: myHand)
         game.events.append(.suggestion(Suggestion(suggester: 1, cards: ["Prof. Plum", "Wrench", "Study"], shower: 2)))

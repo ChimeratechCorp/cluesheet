@@ -46,6 +46,9 @@ struct SheetView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        Toggle(isOn: helperOn) {
+                            Label("Helper", systemImage: "wand.and.stars")
+                        }
                         Button("Notes", systemImage: "note.text") { showingNotes = true }
                         Button("History", systemImage: "clock") { showingHistory = true }
                         Button("New game", systemImage: "arrow.counterclockwise", role: .destructive) {
@@ -91,7 +94,7 @@ struct SheetView: View {
         let pencilMarks = game.pencilMarks()
         return List {
             Section {
-                SolutionBanner(sheet: sheet)
+                SolutionBanner(sheet: sheet, helperOn: store.helperOn)
             }
             if let problem = sheet.contradiction {
                 Section {
@@ -157,6 +160,10 @@ struct SheetView: View {
                     .onTapGesture { editing = Cell(card: card.name, owner: owner) }
             }
         }
+    }
+
+    private var helperOn: Binding<Bool> {
+        Binding(get: { store.helperOn }, set: { store.helperOn = $0 })
     }
 
     private var isEditing: Binding<Bool> {
@@ -232,8 +239,24 @@ struct MarkView: View {
 
 struct SolutionBanner: View {
     let sheet: Sheet
+    let helperOn: Bool
 
     var body: some View {
+        if helperOn {
+            solution
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Helper is off", systemImage: "pencil")
+                    .font(.headline)
+                Text("The sheet shows only what you've entered. Turn the Helper on in the ⋯ menu to fill in X's and find the solution automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private var solution: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(sheet.isSolved ? "Solved! Make your accusation." : "Solution")
                 .font(.headline)

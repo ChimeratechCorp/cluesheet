@@ -52,15 +52,20 @@ public enum Solver {
     /// Rules are applied until nothing changes. With `lookahead`, each unknown
     /// cell is then tried both ways; a guess that leads to a contradiction
     /// proves the opposite.
-    public static func solve(_ game: Game, lookahead: Bool = true) -> Sheet {
+    ///
+    /// With `deduce` off, only facts entered directly are marked: cards
+    /// known to be held, players who passed, and cards you were shown.
+    public static func solve(_ game: Game, deduce: Bool = true, lookahead: Bool = true) -> Sheet {
         let cards = game.edition.cards
         var sheet = Sheet(cards: cards, playerCount: game.players.count,
                           marks: Array(repeating: .unknown, count: cards.count * (game.players.count + 1)))
         var engine = Engine(sheet: sheet, game: game)
         do {
             try engine.applyEvents()
-            try engine.propagate()
-            if lookahead { try engine.lookahead() }
+            if deduce {
+                try engine.propagate()
+                if lookahead { try engine.lookahead() }
+            }
             sheet = engine.sheet
         } catch let error as Contradiction {
             sheet = engine.sheet

@@ -40,6 +40,7 @@ PHONE=$(device '^iPhone 16 Pro$' || device '^iPhone')
 prepare "$PHONE"
 shoot "$PHONE" 1-setup
 shoot "$PHONE" 2-sheet-folded -demoGame
+shoot "$PHONE" 4-helper-off -demoGame -helperOn NO
 
 # iPad mini is 744 pt wide, close to the unfolded iPhone Duo's 626 pt,
 # so it shows the same split layout.
