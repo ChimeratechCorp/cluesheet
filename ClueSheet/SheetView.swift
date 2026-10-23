@@ -4,18 +4,13 @@ import SwiftUI
 /// The clue sheet: a row per card, a column per player plus the envelope.
 struct SheetView: View {
     @Environment(GameStore.self) private var store
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var showingSuggestion = false
     @State private var showingHistory = false
     @State private var showingNotes = false
     @State private var confirmingNewGame = false
     @State private var editing: Cell?
-
-    /// Screens at least this wide split in two at the middle: notes on the
-    /// left half, the sheet on the right. The iPhone Duo's inner screen is
-    /// 1878 px (626 pt) wide unfolded; its outer screen is 466 pt, so folded
-    /// it shows the sheet alone.
-    private static let wideLayoutWidth: CGFloat = 600
 
     /// Tall enough for a mark plus a line of pencil-mark turn numbers.
     private static let rowHeight: CGFloat = 44
@@ -29,7 +24,13 @@ struct SheetView: View {
     var body: some View {
         if let game = store.game, let sheet = store.sheet {
             GeometryReader { geo in
-                let wide = geo.size.width >= Self.wideLayoutWidth
+                // Regular width splits the screen in two at the middle, along
+                // the fold: notes on the left half, the sheet on the right.
+                // That's the iPhone Duo unfolded (either way up); folded, its
+                // outer screen is compact like any iPhone and shows the sheet
+                // alone. Apple's iOS 27.1 guidance is to go by size class, not
+                // screen width or the hinge.
+                let wide = sizeClass == .regular
                 let sheetWidth = wide ? geo.size.width / 2 : geo.size.width
                 HStack(spacing: 0) {
                     if wide {
@@ -128,8 +129,8 @@ struct SheetView: View {
     /// Squares grow with the screen, within reason, so an unfolded screen
     /// gets bigger tap targets rather than just a wider name column.
     private static func cellWidth(for width: CGFloat, owners: Int) -> CGFloat {
-        // Half of an unfolded iPhone Duo is about 313 pt, so the name column
-        // shrinks before the squares do.
+        // Half of an unfolded iPhone Duo is about 334 pt held upright, so the
+        // name column shrinks before the squares do.
         let nameColumn: CGFloat = width >= 500 ? 180 : width < 360 ? 92 : 120
         return min(64, max(30, (width - nameColumn - 32) / CGFloat(owners)))
     }
