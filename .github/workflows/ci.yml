@@ -17,9 +17,12 @@ jobs:
 
   app-build:
     name: Build iPhone app
-    runs-on: macos-15
+    # Xcode 27.1 (iOS 27.1 SDK, iPhone Duo) is only on the Xcode 27 image.
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v5
+      - name: Use Xcode 27.1
+        run: scripts/select-xcode.sh
       - name: Build for the iOS Simulator
         run: |
           xcodebuild build \
