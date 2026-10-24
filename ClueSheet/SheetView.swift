@@ -392,6 +392,8 @@ struct SolutionBanner: View {
                 Text("\(left) possible")
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             ProgressView(value: Double(min(total - left, total - 1)), total: Double(max(1, total - 1)))
                 .tint(tint)
