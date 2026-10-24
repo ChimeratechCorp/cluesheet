@@ -160,7 +160,7 @@ struct SheetView: View {
         return min(64, max(30, (width - nameColumn - 2 * margin - nameInset) / CGFloat(owners)))
     }
 
-    private func header(category: Category, game: Game, cellWidth: CGFloat) -> some View {
+    private func header(category: ClueEngine.Category, game: Game, cellWidth: CGFloat) -> some View {
         let tint = Theme.tint(for: category)
         return HStack(spacing: 0) {
             HStack(spacing: 6) {
@@ -371,7 +371,7 @@ struct SolutionBanner: View {
 
     /// One part of the answer: the card once it's known, or how many are
     /// left and how far the field has narrowed.
-    private func tile(for category: Category) -> some View {
+    private func tile(for category: ClueEngine.Category) -> some View {
         let tint = Theme.tint(for: category)
         let total = sheet.cards.filter { $0.category == category }.count
         let left = sheet.candidates(for: category).count
