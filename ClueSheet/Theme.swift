@@ -8,7 +8,7 @@ import UIKit
 enum Theme {
     /// The page behind everything.
     static let paper = dynamic(light: 0xF5EFE3, dark: 0x1A1816)
-    /// Panels that sit on the page: the solution and each part of the grid.
+    /// Panels that sit on the page, like each part of the grid.
     static let card = dynamic(light: 0xFFFCF6, dark: 0x25221F)
     /// Every other row of the grid, to help the eye along a line.
     static let stripe = dynamic(light: 0xF8F2E7, dark: 0x2B2825)

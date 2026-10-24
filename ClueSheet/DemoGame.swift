@@ -33,6 +33,14 @@ enum DemoGame {
         return game
     }
 
+    /// What the player has marked by hand so far.
+    static let nameMarks: [String: NameMark] = [
+        "Mr. Green": .crossedOut, "Candlestick": .crossedOut, "Revolver": .crossedOut,
+        "Rope": .crossedOut, "Lead Pipe": .crossedOut, "Kitchen": .crossedOut,
+        "Conservatory": .crossedOut, "Ballroom": .crossedOut,
+        "Col. Mustard": .circled, "Library": .circled,
+    ]
+
     static let notes = """
         Ann keeps asking about the Library. Does she need it too?
 
