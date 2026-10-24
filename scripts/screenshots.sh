@@ -59,5 +59,9 @@ duoctl rotate portrait
 shoot 3-split-unfolded -demoGame
 duoctl rotate landscape
 shoot 5-split-unfolded-landscape -demoGame
+duoctl rotate portrait
+xcrun simctl ui "$DUO" appearance dark
+shoot 6-split-unfolded-dark -demoGame
+xcrun simctl ui "$DUO" appearance light
 
 ls -l "$OUT"

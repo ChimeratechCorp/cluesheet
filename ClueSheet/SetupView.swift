@@ -33,10 +33,14 @@ struct SetupView: View {
             }
 
             ForEach(Category.allCases, id: \.self) { category in
-                Section("My \(category.title.lowercased())") {
+                Section {
                     ForEach(edition.cards(in: category)) { card in
                         Toggle(card.name, isOn: binding(for: card.name))
+                            .tint(Theme.has)
                     }
+                } header: {
+                    Label("My \(category.title.lowercased())", systemImage: Theme.icon(for: category))
+                        .foregroundStyle(Theme.tint(for: category))
                 }
             }
 
@@ -45,12 +49,21 @@ struct SetupView: View {
                     Label(problem, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
-                Button("Start game") {
+                Button {
                     store.game = Game(edition: edition, players: players, me: me, myCards: Array(myCards))
+                } label: {
+                    Label("Start game", systemImage: "magnifyingglass")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(!problems.isEmpty)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             }
         }
+        .paperBackground()
         .navigationTitle("New game")
     }
 

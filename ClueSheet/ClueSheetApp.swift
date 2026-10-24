@@ -8,6 +8,7 @@ struct ClueSheetApp: App {
         WindowGroup {
             ContentView()
                 .environment(store)
+                .tint(Theme.accent)
         }
     }
 }

@@ -36,15 +36,26 @@ struct SheetView: View {
                     if wide {
                         SidePanel()
                             .frame(width: geo.size.width / 2 - 1)
-                        Divider()
+                        Rectangle()
+                            .fill(Theme.rule)
+                            .frame(width: 1)
+                            .ignoresSafeArea()
                     }
                     sheetList(game: game, sheet: sheet,
                               cellWidth: Self.cellWidth(for: sheetWidth, owners: sheet.ownerCount))
                 }
             }
+            .background(Theme.paper.ignoresSafeArea())
             .navigationTitle("Clue Sheet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Label("Clue Sheet", systemImage: "magnifyingglass")
+                        .labelStyle(.titleAndIcon)
+                        .font(.headline)
+                        .fontDesign(.serif)
+                        .foregroundStyle(Theme.ink)
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
                         Toggle(isOn: helperOn) {
@@ -102,29 +113,43 @@ struct SheetView: View {
 
     private func sheetList(game: Game, sheet: Sheet, cellWidth: CGFloat) -> some View {
         let pencilMarks = game.pencilMarks()
-        return List {
-            Section {
+        return ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
                 SolutionBanner(sheet: sheet, helperOn: store.helperOn)
-            }
-            if let problem = sheet.contradiction {
-                Section {
+                    .padding(.bottom, 12)
+                if let problem = sheet.contradiction {
                     Label("Something doesn't add up: \(problem) Check the history for a mistyped entry.",
-                          systemImage: "exclamationmark.octagon")
-                        .foregroundStyle(.red)
+                          systemImage: "exclamationmark.octagon.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.accent)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                        .padding(.bottom, 12)
                 }
-            }
-            ForEach(Category.allCases, id: \.self) { category in
-                Section {
-                    ForEach(game.edition.cards(in: category)) { card in
-                        row(card: card, game: game, sheet: sheet, pencilMarks: pencilMarks, cellWidth: cellWidth)
+                ForEach(Category.allCases, id: \.self) { category in
+                    let cards = game.edition.cards(in: category)
+                    Section {
+                        ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                            row(card: card, game: game, sheet: sheet, pencilMarks: pencilMarks,
+                                cellWidth: cellWidth, index: index, isLast: index == cards.count - 1)
+                        }
+                        Color.clear.frame(height: 12)
+                    } header: {
+                        header(category: category, game: game, cellWidth: cellWidth)
                     }
-                } header: {
-                    header(title: category.title, game: game, cellWidth: cellWidth)
                 }
             }
+            .padding(.horizontal, Self.margin)
+            .padding(.vertical, 8)
         }
-        .listStyle(.plain)
+        .fontDesign(.serif)
     }
+
+    /// Space between the grid and the edge of the screen (or the fold).
+    private static let margin: CGFloat = 12
+    /// Space before each card name, inside the grid.
+    private static let nameInset: CGFloat = 10
 
     /// Squares grow with the screen, within reason, so an unfolded screen
     /// gets bigger tap targets rather than just a wider name column.
@@ -132,45 +157,85 @@ struct SheetView: View {
         // Half of an unfolded iPhone Duo is about 334 pt held upright, so the
         // name column shrinks before the squares do.
         let nameColumn: CGFloat = width >= 500 ? 180 : width < 360 ? 92 : 120
-        return min(64, max(30, (width - nameColumn - 32) / CGFloat(owners)))
+        return min(64, max(30, (width - nameColumn - 2 * margin - nameInset) / CGFloat(owners)))
     }
 
-    private func header(title: String, game: Game, cellWidth: CGFloat) -> some View {
-        HStack(spacing: 0) {
-            Text(title)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private func header(category: Category, game: Game, cellWidth: CGFloat) -> some View {
+        let tint = Theme.tint(for: category)
+        return HStack(spacing: 0) {
+            HStack(spacing: 6) {
+                Image(systemName: Theme.icon(for: category))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(tint, in: Circle())
+                Text(category.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(.leading, Self.nameInset - 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
             ForEach(game.players.indices, id: \.self) { i in
+                let isMe = i == game.me
                 Text(initials(game.players[i].name))
-                    .fontWeight(i == game.me ? .bold : .regular)
+                    .font(.caption.weight(isMe ? .bold : .medium))
+                    .fontDesign(.default)
+                    .foregroundStyle(isMe ? Color.white : Theme.fadedInk)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(isMe ? Theme.accent : Color.clear, in: Capsule())
                     .frame(width: cellWidth)
             }
             Image(systemName: "envelope.fill")
-                .frame(width: cellWidth)
+                .font(.caption)
+                .foregroundStyle(Theme.accent)
+                .frame(width: cellWidth, height: 32)
+                .background(Theme.accent.opacity(0.08))
         }
-        .font(.caption)
+        .frame(height: 40)
+        .background(Theme.card)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(tint).frame(height: 2)
+        }
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 12, topTrailingRadius: 12))
     }
 
     private func row(card: Card, game: Game, sheet: Sheet, pencilMarks: [CellKey: [PencilMark]],
-                     cellWidth: CGFloat) -> some View {
+                     cellWidth: CGFloat, index: Int, isLast: Bool) -> some View {
         let solved = sheet.mark(card: card.name, owner: sheet.envelope) == .has
         let ruledOut = sheet.mark(card: card.name, owner: sheet.envelope) == .lacks
+        let corners = UnevenRoundedRectangle(bottomLeadingRadius: isLast ? 12 : 0,
+                                             bottomTrailingRadius: isLast ? 12 : 0)
         return HStack(spacing: 0) {
-            Text(card.name)
-                .strikethrough(ruledOut)
-                .foregroundStyle(ruledOut ? Color.secondary : Color.primary)
-                .fontWeight(solved ? .bold : .regular)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 4) {
+                if solved {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption.weight(.bold))
+                }
+                Text(card.name)
+                    .strikethrough(ruledOut, color: Theme.fadedInk)
+                    .fontWeight(solved ? .bold : .regular)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .foregroundStyle(solved ? Theme.accent : ruledOut ? Theme.fadedInk : Theme.ink)
+            .padding(.leading, Self.nameInset)
+            .frame(maxWidth: .infinity, alignment: .leading)
             ForEach(0..<sheet.ownerCount, id: \.self) { owner in
                 SquareView(mark: sheet.mark(card: card.name, owner: owner),
                            turns: (pencilMarks[CellKey(card: card.name, owner: owner)] ?? [])
-                               .filter { !$0.isCrossedOut }.map(\.turn))
+                               .filter { !$0.isCrossedOut }.map(\.turn),
+                           isEnvelope: owner == sheet.envelope)
                     .frame(width: cellWidth, height: Self.rowHeight)
                     .contentShape(Rectangle())
                     .onTapGesture { editing = Cell(card: card.name, owner: owner) }
             }
         }
+        .background(solved ? Theme.accent.opacity(0.08) : index.isMultiple(of: 2) ? Theme.card : Theme.stripe)
+        .clipShape(corners)
+        .overlay(corners.stroke(Theme.rule, lineWidth: isLast ? 0.5 : 0))
     }
 
     private var helperOn: Binding<Bool> {
@@ -211,6 +276,7 @@ struct SheetView: View {
 struct SquareView: View {
     let mark: Mark
     let turns: [Int]
+    var isEnvelope = false
 
     private var showsTurns: Bool { !turns.isEmpty && mark != .lacks }
 
@@ -220,16 +286,23 @@ struct SquareView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, showsTurns ? 12 : 0)
             if showsTurns {
+                // Pencil marks: small, slanted, in red ink.
                 Text(turns.map(String.init).joined(separator: " "))
-                    .font(.system(size: 10, weight: .medium).monospacedDigit())
-                    .foregroundStyle(mark == .has ? Color.secondary : Color.accentColor)
+                    .font(.system(size: 11, weight: .semibold, design: .serif).italic().monospacedDigit())
+                    .foregroundStyle(mark == .has ? Theme.fadedInk : Theme.accent)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
-                    .padding(.horizontal, 2)
-                    .padding(.top, 1)
+                    .padding(.horizontal, 3)
+                    .padding(.top, 2)
             }
         }
-        .overlay(Rectangle().stroke(Color.secondary.opacity(0.25), lineWidth: 0.5))
+        .background(background)
+        .overlay(Rectangle().stroke(Theme.rule, lineWidth: 0.5))
+    }
+
+    private var background: Color {
+        if mark == .has { return Theme.has.opacity(0.14) }
+        return isEnvelope ? Theme.accent.opacity(0.08) : .clear
     }
 }
 
@@ -239,9 +312,13 @@ struct MarkView: View {
     var body: some View {
         switch mark {
         case .has:
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Theme.has)
         case .lacks:
-            Image(systemName: "xmark").foregroundStyle(.secondary)
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Theme.fadedInk)
         case .unknown:
             Color.clear
         }
@@ -253,41 +330,74 @@ struct SolutionBanner: View {
     let helperOn: Bool
 
     var body: some View {
-        if helperOn {
-            solution
-        } else {
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Helper is off", systemImage: "pencil")
-                    .font(.headline)
-                Text("The sheet shows only what you've entered. Turn the Helper on in the ⋯ menu to fill in X's and find the solution automatically.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        Group {
+            if helperOn {
+                solution
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Helper is off", systemImage: "pencil")
+                        .font(.headline)
+                        .foregroundStyle(Theme.ink)
+                    Text("The sheet shows only what you've entered. Turn the Helper on in the ⋯ menu to fill in X's and find the solution automatically.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.fadedInk)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.vertical, 4)
         }
+        .padding(14)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .stroke(sheet.isSolved && helperOn ? Theme.has : Theme.rule,
+                    lineWidth: sheet.isSolved && helperOn ? 2 : 0.5))
     }
 
     private var solution: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(sheet.isSolved ? "Solved! Make your accusation." : "Solution")
-                .font(.headline)
-                .foregroundStyle(sheet.isSolved ? Color.green : Color.primary)
-            HStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label(sheet.isSolved ? "Solved! Make your accusation." : "In the envelope",
+                      systemImage: sheet.isSolved ? "checkmark.seal.fill" : "envelope.open.fill")
+                    .font(.headline)
+                    .foregroundStyle(sheet.isSolved ? Theme.has : Theme.ink)
+                Spacer()
+            }
+            HStack(alignment: .top, spacing: 10) {
                 ForEach(Category.allCases, id: \.self) { category in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(category.title)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        if let card = sheet.solution(for: category) {
-                            Text(card.name).bold()
-                        } else {
-                            Text("\(sheet.candidates(for: category).count) possible")
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    tile(for: category)
                 }
             }
         }
-        .padding(.vertical, 4)
+    }
+
+    /// One part of the answer: the card once it's known, or how many are
+    /// left and how far the field has narrowed.
+    private func tile(for category: Category) -> some View {
+        let tint = Theme.tint(for: category)
+        let total = sheet.cards.filter { $0.category == category }.count
+        let left = sheet.candidates(for: category).count
+        return VStack(alignment: .leading, spacing: 6) {
+            Label(category.title, systemImage: Theme.icon(for: category))
+                .font(.caption.weight(.semibold))
+                .fontDesign(.default)
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            if let card = sheet.solution(for: category) {
+                Text(card.name)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            } else {
+                Text("\(left) possible")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+            ProgressView(value: Double(min(total - left, total - 1)), total: Double(max(1, total - 1)))
+                .tint(tint)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
     }
 }
