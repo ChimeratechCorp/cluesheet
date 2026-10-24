@@ -20,6 +20,16 @@ final class GameStore {
         didSet { try? notes.write(to: notesURL, atomically: true, encoding: .utf8) }
     }
 
+    /// Card names the player has crossed out or circled by hand. Kept apart
+    /// from `game` because they're the player's own notes, not evidence.
+    var nameMarks: [String: NameMark] = [:] {
+        didSet {
+            if let data = try? JSONEncoder().encode(nameMarks) {
+                try? data.write(to: nameMarksURL, options: .atomic)
+            }
+        }
+    }
+
     /// When on, the sheet fills in everything that follows from your
     /// entries. When off, it shows only what you entered, like paper.
     var helperOn: Bool = UserDefaults.standard.object(forKey: "helperOn") == nil
@@ -32,11 +42,13 @@ final class GameStore {
 
     private let saveURL = URL.documentsDirectory.appending(path: "game.json")
     private let notesURL = URL.documentsDirectory.appending(path: "notes.txt")
+    private let nameMarksURL = URL.documentsDirectory.appending(path: "nameMarks.json")
 
     init() {
         if ProcessInfo.processInfo.arguments.contains(DemoGame.launchArgument) {
             game = DemoGame.game
             notes = DemoGame.notes
+            nameMarks = DemoGame.nameMarks
             recompute()
             return
         }
@@ -44,6 +56,9 @@ final class GameStore {
             game = try? JSONDecoder().decode(Game.self, from: data)
         }
         notes = (try? String(contentsOf: notesURL, encoding: .utf8)) ?? ""
+        if let data = try? Data(contentsOf: nameMarksURL) {
+            nameMarks = (try? JSONDecoder().decode([String: NameMark].self, from: data)) ?? [:]
+        }
         recompute()
     }
 
@@ -58,6 +73,12 @@ final class GameStore {
     func newGame() {
         game = nil
         notes = ""
+        nameMarks = [:]
+    }
+
+    /// Cross out, then circle, then clear a card name.
+    func cycleMark(for card: String) {
+        nameMarks[card] = NameMark.next(after: nameMarks[card])
     }
 
     private func recompute() {

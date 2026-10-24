@@ -27,11 +27,17 @@ struct NotesView: View {
     private var editor: some View {
         @Bindable var store = store
         return TextEditor(text: $store.notes)
+            .font(.body)
+            .fontDesign(.serif)
+            .foregroundStyle(Theme.ink)
+            .scrollContentBackground(.hidden)
             .padding(.horizontal, 12)
+            .background(embedded ? Theme.card : Theme.paper)
             .overlay(alignment: .topLeading) {
                 if store.notes.isEmpty {
-                    Text("Notes")
-                        .foregroundStyle(.tertiary)
+                    Text("Hunches, who's chasing which room…")
+                        .fontDesign(.serif)
+                        .foregroundStyle(Theme.fadedInk)
                         .padding(.horizontal, 17)
                         .padding(.vertical, 8)
                         .allowsHitTesting(false)
@@ -56,10 +62,21 @@ struct SidePanel: View {
             }
             .pickerStyle(.segmented)
             .padding(12)
-            switch tab {
-            case .notes: NotesView(embedded: true)
-            case .history: HistoryView(embedded: true)
+            Group {
+                switch tab {
+                case .notes:
+                    NotesView(embedded: true)
+                        .padding(.vertical, 6)
+                        .background(Theme.card)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.rule, lineWidth: 0.5))
+                        .padding([.horizontal, .bottom], 12)
+                case .history:
+                    HistoryView(embedded: true)
+                }
             }
+            .frame(maxHeight: .infinity)
         }
+        .background(Theme.paper.ignoresSafeArea())
     }
 }

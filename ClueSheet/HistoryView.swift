@@ -24,6 +24,10 @@ struct HistoryView: View {
                 if let game = store.game {
                     ForEach(game.events.reversed()) { event in
                         Text(describe(event, game: game))
+                            .font(.subheadline)
+                            .fontDesign(.serif)
+                            .foregroundStyle(Theme.ink)
+                            .listRowBackground(Theme.card)
                             .swipeActions {
                                 Button("Delete", role: .destructive) { store.remove(event) }
                             }
@@ -33,6 +37,7 @@ struct HistoryView: View {
                 if embedded { Text("History") }
             }
         }
+        .paperBackground()
     }
 
     private var standalone: some View {

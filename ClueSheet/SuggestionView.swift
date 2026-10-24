@@ -64,6 +64,7 @@ struct SuggestionView: View {
                 }
             }
         }
+        .paperBackground()
         .navigationTitle("Log turn")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
